@@ -16,7 +16,7 @@ authors = ["Roberto de Souza <rabbittrix@hotmail.com>"]
 license = "Apache-2.0"
 repository = "https://github.com/rabbittrix/swift-rs-core"
 keywords = ["swift", "iso20022", "financial", "messaging", "rust"]
-categories = ["financial", "network-programming", "asynchronous"]
+categories = ["network-programming", "asynchronous", "parsing"]
 
 [workspace.dependencies]
 # Async runtime
