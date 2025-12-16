@@ -4,8 +4,6 @@
 //! both REST and gRPC protocols, implementing the Strangler Fig pattern.
 
 use axum::{
-    extract::State,
-    http::StatusCode,
     response::Json,
     routing::{get, post},
     Router,
@@ -13,7 +11,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::info;
-use tracing_subscriber::EnvFilter;
+use tracing_subscriber::{filter::LevelFilter, EnvFilter};
 
 mod handlers;
 mod state;

@@ -1,7 +1,6 @@
 //! Aggregate root trait
 
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::event::DomainEvent;

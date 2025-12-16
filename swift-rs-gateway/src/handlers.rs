@@ -1,10 +1,6 @@
 //! HTTP request handlers
 
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::Json,
-};
+use axum::{extract::Path, http::StatusCode, response::Json};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -26,8 +22,8 @@ pub struct MessageResponse {
 }
 
 pub async fn create_message(
-    State(_state): State<Arc<AppState>>,
-    Json(request): Json<CreateMessageRequest>,
+    axum::extract::State(_state): axum::extract::State<Arc<AppState>>,
+    Json(_request): Json<CreateMessageRequest>,
 ) -> Result<Json<MessageResponse>, StatusCode> {
     // TODO: Implement message creation logic
     let message_id = Uuid::new_v4();
@@ -39,7 +35,7 @@ pub async fn create_message(
 }
 
 pub async fn get_message(
-    State(_state): State<Arc<AppState>>,
+    axum::extract::State(_state): axum::extract::State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<MessageResponse>, StatusCode> {
     // TODO: Implement message retrieval logic

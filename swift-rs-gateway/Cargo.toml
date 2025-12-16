@@ -23,6 +23,7 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
 
 # Internal deps
 swift-rs-core = { path = "../swift-rs-core" }
