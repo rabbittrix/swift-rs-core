@@ -1,0 +1,45 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.pem
+*.key
+*.crt
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# Build artifacts
+dist/
+build/
+
+# Kubernetes secrets
+k8s/secrets/
+
+# AI models (too large for git)
+models/*.onnx
+models/*.pt
+models/*.pth
+
+# Files
+.project_information.md

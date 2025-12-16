@@ -1,0 +1,20 @@
+[package]
+name = "swift-rs-iso20022"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+# Workspace deps
+serde = { workspace = true }
+serde-xml-rs = "0.8.2"
+thiserror = { workspace = true }
+bytes = { workspace = true }
+tracing = { workspace = true }
+
+# Internal deps
+swift-rs-core = { path = "../swift-rs-core" }

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swift-rs-gateway
+  labels:
+    app: swift-rs-gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: swift-rs-gateway
+  template:
+    metadata:
+      labels:
+        app: swift-rs-gateway
+    spec:
+      containers:
+      - name: gateway
+        image: swift-rs-gateway:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: RUST_LOG
+          value: "info"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: swift-rs-gateway
+spec:
+  selector:
+    app: swift-rs-gateway
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: LoadBalancer
+

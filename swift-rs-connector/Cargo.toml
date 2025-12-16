@@ -1,0 +1,25 @@
+[package]
+name = "swift-rs-connector"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+# Workspace deps
+tokio = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+rustls = { workspace = true }
+rustls-pemfile = { workspace = true }
+bytes = { workspace = true }
+futures = { workspace = true }
+
+# Internal deps
+swift-rs-core = { path = "../swift-rs-core" }

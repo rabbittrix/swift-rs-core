@@ -1,0 +1,71 @@
+[workspace]
+members = [
+    "swift-rs-core",
+    "swift-rs-iso20022",
+    "swift-rs-connector",
+    "swift-rs-cqrs",
+    "swift-rs-gateway",
+    "swift-rs-ai",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Roberto de Souza <rabbittrix@hotmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rabbittrix/swift-rs"
+keywords = ["swift", "iso20022", "financial", "messaging", "rust"]
+categories = ["financial", "network-programming", "asynchronous"]
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9.33"
+
+# Error handling
+thiserror = "2.0.17"
+anyhow = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# HTTP/gRPC
+axum = { version = "0.8.7", features = ["macros", "ws"] }
+tonic = "0.14.2"
+tonic-build = "0.14.2"
+
+# Database
+sqlx = { version = "0.8.6", features = [
+    "runtime-tokio-native-tls",
+    "postgres",
+    "chrono",
+    "uuid",
+] }
+
+# Event streaming
+rdkafka = { version = "0.38.0", features = ["cmake-build", "ssl-vendored"] }
+async-nats = "0.45.0"
+
+# Security
+rustls = "0.23.35"
+rustls-pemfile = "2.0"
+aes-gcm = "0.10"
+
+# AI/ML (optional - uncomment when needed)
+# ort = { version = "2.0.0-rc.10" }
+# candle-core = "0.4.0"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# Utilities
+bytes = "1.5"
+futures = "0.3"
