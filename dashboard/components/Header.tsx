@@ -7,12 +7,16 @@ interface HeaderProps {
 }
 
 export default function Header({ isConnected }: HeaderProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    setMounted(true);
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
 
     return () => clearInterval(timer);
   }, []);
@@ -32,9 +36,11 @@ export default function Header({ isConnected }: HeaderProps) {
                 {isConnected ? "Connected" : "Disconnected"}
               </span>
             </div>
-            <span className="text-sm text-slate-400">
-              {currentTime.toLocaleTimeString()}
-            </span>
+            {mounted ? (
+              <span className="text-sm text-slate-400">{currentTime}</span>
+            ) : (
+              <span className="text-sm text-slate-400">--:--:--</span>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-slate-300">Swift-RS v0.1.0</span>

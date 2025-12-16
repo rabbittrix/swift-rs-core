@@ -7,6 +7,10 @@ const nextConfig = {
       process.env.NEXT_PUBLIC_GATEWAY_URL || "http://localhost:8080";
     return [
       {
+        source: "/api/swift/health",
+        destination: `${gatewayUrl}/health`,
+      },
+      {
         source: "/api/swift/:path*",
         destination: `${gatewayUrl}/api/v1/:path*`,
       },

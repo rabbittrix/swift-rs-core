@@ -12,12 +12,25 @@ export default function Home() {
 
   useEffect(() => {
     // Check gateway connection
-    fetch("/api/swift/health")
-      .then((res) => res.json())
-      .then((data) => {
-        setIsConnected(data.status === "healthy");
-      })
-      .catch(() => setIsConnected(false));
+    const checkConnection = async () => {
+      try {
+        const res = await fetch("/api/swift/health");
+        if (res.ok) {
+          const data = await res.json();
+          setIsConnected(data.status === "healthy");
+        } else {
+          setIsConnected(false);
+        }
+      } catch (error) {
+        setIsConnected(false);
+      }
+    };
+
+    checkConnection();
+    // Poll every 5 seconds
+    const interval = setInterval(checkConnection, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (

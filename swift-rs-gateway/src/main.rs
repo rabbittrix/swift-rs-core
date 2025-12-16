@@ -39,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/api/v1/messages", post(handlers::create_message))
-        .route("/api/v1/messages/:id", get(handlers::get_message))
+        .route("/api/v1/messages/{id}", get(handlers::get_message))
         .with_state(app_state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;

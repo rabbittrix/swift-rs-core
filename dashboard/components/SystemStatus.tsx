@@ -15,16 +15,23 @@ interface HealthData {
 export default function SystemStatus({ isConnected }: SystemStatusProps) {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [connectionStatus, setConnectionStatus] = useState(false);
 
   useEffect(() => {
     const fetchHealth = async () => {
       try {
         const res = await fetch("/api/swift/health");
-        const data = await res.json();
-        setHealth(data);
-        setLastUpdate(new Date());
+        if (res.ok) {
+          const data = await res.json();
+          setHealth(data);
+          setConnectionStatus(data.status === "healthy");
+          setLastUpdate(new Date());
+        } else {
+          setConnectionStatus(false);
+        }
       } catch (error) {
         console.error("Failed to fetch health:", error);
+        setConnectionStatus(false);
       }
     };
 
@@ -42,12 +49,12 @@ export default function SystemStatus({ isConnected }: SystemStatusProps) {
           <span className="text-slate-300">Gateway Status</span>
           <span
             className={`px-3 py-1 rounded-full text-sm font-medium ${
-              isConnected
+              connectionStatus || isConnected
                 ? "bg-green-500/20 text-green-400"
                 : "bg-red-500/20 text-red-400"
             }`}
           >
-            {isConnected ? "Online" : "Offline"}
+            {connectionStatus || isConnected ? "Online" : "Offline"}
           </span>
         </div>
         {health && (
