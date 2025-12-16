@@ -23,4 +23,4 @@ bytes = { workspace = true }
 futures = { workspace = true }
 
 # Internal deps
-swift-rs-core = { path = "../swift-rs-core" }
+swift-rs-core = { version = "0.1.0", path = "../swift-rs-core" }

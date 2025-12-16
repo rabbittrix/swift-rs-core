@@ -26,7 +26,7 @@ tracing-subscriber = { workspace = true }
 uuid = { workspace = true }
 
 # Internal deps
-swift-rs-core = { path = "../swift-rs-core" }
-swift-rs-iso20022 = { path = "../swift-rs-iso20022" }
-swift-rs-connector = { path = "../swift-rs-connector" }
-swift-rs-cqrs = { path = "../swift-rs-cqrs" }
+swift-rs-core = { version = "0.1.0", path = "../swift-rs-core" }
+swift-rs-iso20022 = { version = "0.1.0", path = "../swift-rs-iso20022" }
+swift-rs-connector = { version = "0.1.0", path = "../swift-rs-connector" }
+swift-rs-cqrs = { version = "0.1.0", path = "../swift-rs-cqrs" }
