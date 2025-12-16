@@ -11,6 +11,17 @@ services:
       - postgres
       - kafka
 
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_GATEWAY_URL=http://gateway:8080
+    depends_on:
+      - gateway
+
   postgres:
     image: postgres:16-alpine
     environment:

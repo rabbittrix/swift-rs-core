@@ -9,15 +9,36 @@
 
 ## 🚀 Quick Start
 
+### Backend (Rust)
+
 ```bash
 # Build all crates
 cargo build --release
 
 # Run the API Gateway
 cargo run --bin swift-rs-gateway
+```
 
-# Run tests
-cargo test --workspace
+### Frontend (Next.js Dashboard)
+
+```bash
+# Navigate to dashboard directory
+cd dashboard
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+
+The dashboard will be available at [http://localhost:3000](http://localhost:3000)
+
+### Docker Compose (Full Stack)
+
+```bash
+# Start all services (Gateway, Dashboard, PostgreSQL, Kafka)
+docker-compose up -d
 ```
 
 ## 📦 Project Structure
