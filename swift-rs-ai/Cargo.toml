@@ -7,6 +7,7 @@ license.workspace = true
 repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
+description = "AI-powered fraud detection and risk scoring for SWIFT financial messages"
 
 [dependencies]
 # Workspace deps
