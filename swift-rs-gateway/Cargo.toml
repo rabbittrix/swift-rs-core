@@ -7,6 +7,7 @@ license.workspace = true
 repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
+description = "HTTP/gRPC gateway wiring ISO 20022, CBDC settlement, privacy, and governance modules"
 
 [[bin]]
 name = "swift-rs-gateway"
