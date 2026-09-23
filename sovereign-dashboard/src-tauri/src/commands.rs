@@ -6,9 +6,12 @@
 
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, State};
+
+const LEDGER_CAP: usize = 500;
 
 static TICK: AtomicU64 = AtomicU64::new(0);
 
@@ -59,7 +62,8 @@ pub struct CurrencyBalance {
     pub issuer: String,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct LedgerRow {
     pub id: String,
     pub date: String,
@@ -68,7 +72,15 @@ pub struct LedgerRow {
     pub currency: String,
     pub status: String,
     pub tx_hash: String,
+    #[serde(default)]
+    pub verified: Option<bool>,
+    #[serde(default)]
+    pub route: Option<String>,
+    #[serde(default)]
+    pub corridor: Option<String>,
 }
+
+pub struct LedgerState(pub Mutex<Vec<LedgerRow>>);
 
 #[derive(Debug, Serialize, Clone)]
 pub struct LiveTransaction {
@@ -223,26 +235,27 @@ fn balance(currency: &str, name: &str, amount: &str, issuer: &str) -> CurrencyBa
 }
 
 #[tauri::command]
-pub fn get_transactions() -> Vec<LedgerRow> {
-    vec![
-        row("hx-9f21", "23 Sep 2026 17:41", "Swap", "5,000,000.00", "BRL-CBDC", "Settled"),
-        row("hx-9f18", "23 Sep 2026 16:05", "Receive", "1,200,000.00", "CNY-CBDC", "Settled"),
-        row("hx-9f11", "23 Sep 2026 11:22", "Send", "800,000.00", "AED-CBDC", "Settled"),
-        row("hx-9e90", "22 Sep 2026 19:14", "Swap", "250,000.00", "INR-CBDC", "Blocked"),
-        row("hx-9e44", "22 Sep 2026 09:03", "Receive", "2,400,000.00", "EUR-CBDC", "Settled"),
-    ]
+pub fn get_transactions(state: State<'_, LedgerState>) -> Vec<LedgerRow> {
+    state.0.lock().map(|rows| rows.clone()).unwrap_or_default()
 }
 
-fn row(id: &str, date: &str, kind: &str, amount: &str, currency: &str, status: &str) -> LedgerRow {
-    LedgerRow {
-        id: id.into(),
-        date: date.into(),
-        r#type: kind.into(),
-        amount: amount.into(),
-        currency: currency.into(),
-        status: status.into(),
-        tx_hash: demo_hash(id),
+#[tauri::command]
+pub fn append_ledger_entries(
+    state: State<'_, LedgerState>,
+    entries: Vec<LedgerRow>,
+) -> Result<Vec<LedgerRow>, String> {
+    let mut guard = state
+        .0
+        .lock()
+        .map_err(|_| "ledger lock poisoned".to_string())?;
+    for entry in entries {
+        if guard.iter().any(|row| row.id == entry.id) {
+            continue;
+        }
+        guard.insert(0, entry);
     }
+    guard.truncate(LEDGER_CAP);
+    Ok(guard.clone())
 }
 
 /// Emits one corridor settlement. The background feed calls the same generator.

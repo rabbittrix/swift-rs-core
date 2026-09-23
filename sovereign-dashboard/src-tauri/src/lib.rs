@@ -7,6 +7,7 @@ mod simulate;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(commands::LedgerState(std::sync::Mutex::new(Vec::new())))
         .setup(|app| {
             commands::start_live_feed(app.handle().clone());
             Ok(())
@@ -16,6 +17,7 @@ pub fn run() {
             commands::get_network_stats,
             commands::get_wallet_balances,
             commands::get_transactions,
+            commands::append_ledger_entries,
             commands::simulate_live_transaction,
             simulate::simulate_payment,
             countries::get_available_countries,

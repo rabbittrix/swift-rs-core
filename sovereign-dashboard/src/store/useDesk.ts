@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { getNetworkStats, getTransactions, getWalletBalances } from "@/lib/api";
+import { appendLedgerEntries, getNetworkStats, getTransactions, getWalletBalances } from "@/lib/api";
+import { ledgerRowFromLive } from "@/lib/ledgerRows";
 import type { CurrencyBalance, DeskView, LedgerRow, LiveTransaction, NetworkStats } from "@/lib/types";
 
 interface DeskState {
@@ -13,9 +14,10 @@ interface DeskState {
   hydrate: () => Promise<void>;
   pushLive: (tx: LiveTransaction) => void;
   remember: (row: LedgerRow) => void;
+  rememberBatch: (rows: LedgerRow[]) => Promise<void>;
 }
 
-export const useDesk = create<DeskState>((set) => ({
+export const useDesk = create<DeskState>((set, get) => ({
   view: "simulator",
   stats: null,
   balances: [],
@@ -45,5 +47,20 @@ export const useDesk = create<DeskState>((set) => ({
         stats: state.stats ? { ...state.stats, tps, avg_settlement_ms: tx.settled_ms } : state.stats,
       };
     }),
-  remember: (row) => set((state) => ({ history: [row, ...state.history].slice(0, 12) })),
+  remember: (row) => {
+    void get().rememberBatch([row]);
+  },
+  rememberBatch: async (rows) => {
+    const history = await appendLedgerEntries(rows);
+    set({ history });
+  },
 }));
+
+// Record background network settlements in the ledger (deduped by id).
+useDesk.subscribe((state, prev) => {
+  if (state.feed === prev.feed || state.feed.length === 0) return;
+  const latest = state.feed[0];
+  if (prev.feed[0]?.id === latest.id) return;
+  if (state.history.some((row) => row.id === latest.id)) return;
+  void useDesk.getState().rememberBatch([ledgerRowFromLive(latest)]);
+});

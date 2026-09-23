@@ -1,4 +1,5 @@
 import { COUNTRY_CATALOG, mockGlobalSnapshot } from "./countries";
+import { loadLocalLedger, mergeLedgerEntries, saveLocalLedger } from "./ledgerHistory";
 import type {
   CountryNode,
   CurrencyBalance,
@@ -109,13 +110,20 @@ export function mockBalances(): CurrencyBalance[] {
 }
 
 export function mockActivity(): LedgerRow[] {
-  return [
-    { id: "hx-9f21", date: "23 Sep 2026 17:41", type: "Swap", amount: "5,000,000.00", currency: "BRL-CBDC", status: "Settled", tx_hash: demoHash("swap-1"), verified: true },
-    { id: "hx-9f18", date: "23 Sep 2026 16:05", type: "Receive", amount: "1,200,000.00", currency: "CNY-CBDC", status: "Settled", tx_hash: demoHash("rcv-1"), verified: true },
-    { id: "hx-9f11", date: "23 Sep 2026 11:22", type: "Send", amount: "800,000.00", currency: "AED-CBDC", status: "Settled", tx_hash: demoHash("snd-1"), verified: true },
-    { id: "hx-9e90", date: "22 Sep 2026 19:14", type: "Swap", amount: "250,000.00", currency: "INR-CBDC", status: "Blocked", tx_hash: demoHash("blk-1"), verified: false },
-    { id: "hx-9e44", date: "22 Sep 2026 09:03", type: "Receive", amount: "2,400,000.00", currency: "EUR-CBDC", status: "Settled", tx_hash: demoHash("rcv-2"), verified: true },
-  ];
+  return loadLocalLedger();
+}
+
+export async function appendLedgerEntries(entries: LedgerRow[]): Promise<LedgerRow[]> {
+  if (entries.length === 0) {
+    return getTransactions();
+  }
+  if (!isTauri()) {
+    const merged = mergeLedgerEntries(loadLocalLedger(), entries);
+    saveLocalLedger(merged);
+    return merged;
+  }
+  const { invoke } = await import("@tauri-apps/api/core");
+  return invoke<LedgerRow[]>("append_ledger_entries", { entries });
 }
 
 export function mockLive(): LiveTransaction {

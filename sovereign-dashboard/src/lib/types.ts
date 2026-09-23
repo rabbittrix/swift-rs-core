@@ -129,6 +129,8 @@ export interface LedgerRow {
   status: "Settled" | "Blocked";
   tx_hash: string;
   verified?: boolean;
+  route?: "LegacySwift" | "SovereignRs" | "Network";
+  corridor?: string;
 }
 
 export interface LiveTransaction {

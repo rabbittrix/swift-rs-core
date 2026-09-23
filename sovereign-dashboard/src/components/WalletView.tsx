@@ -28,14 +28,17 @@ export function WalletView() {
       <Card className="min-h-0 border-slate-800 bg-slate-950/80">
         <CardHeader>
           <CardTitle>Transaction history</CardTitle>
-          <span className="text-[11px] text-slate-500">Cryptographic bindings · demonstration data</span>
+          <span className="text-[11px] text-slate-500">
+            {history.length} entries · simulators + live network feed
+          </span>
         </CardHeader>
         <CardContent className="overflow-auto">
           <table className="w-full text-left text-xs">
             <thead className="text-slate-500">
               <tr>
                 <th className="pb-2 font-medium">Date</th>
-                <th className="pb-2 font-medium">Type</th>
+                <th className="pb-2 font-medium">Rail</th>
+                <th className="pb-2 font-medium">Corridor</th>
                 <th className="pb-2 font-medium">Amount</th>
                 <th className="pb-2 font-medium">Currency</th>
                 <th className="pb-2 font-medium">Status</th>
@@ -44,10 +47,28 @@ export function WalletView() {
               </tr>
             </thead>
             <tbody>
+              {history.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-slate-500">
+                    No activity yet. Run a simulation or wait for the live network feed.
+                  </td>
+                </tr>
+              )}
               {history.map((row) => (
                 <tr key={row.id} className="border-t border-slate-800/80">
                   <td className="py-2.5 text-slate-300">{row.date}</td>
-                  <td>{row.type}</td>
+                  <td className="text-slate-400">
+                    {row.route === "LegacySwift"
+                      ? "SWIFT"
+                      : row.route === "SovereignRs"
+                        ? "Sovereign"
+                        : row.route === "Network"
+                          ? "Network"
+                          : "—"}
+                  </td>
+                  <td className="max-w-[140px] truncate text-slate-400" title={row.corridor}>
+                    {row.corridor ?? "—"}
+                  </td>
                   <td className="font-mono">{row.amount}</td>
                   <td>{row.currency}</td>
                   <td>
