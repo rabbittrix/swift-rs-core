@@ -11,7 +11,7 @@ import {
   runSimulatePayment,
   subscribeTransactionUpdates,
 } from "@/lib/api";
-import { corridorContext, legacyFee } from "@/lib/countries";
+import { corridorContext, legacyFee, US_LISTED_CORRIDOR_NOTICE } from "@/lib/countries";
 import { applyUpdate, cbdcPair, emptyTrack, simulatePaymentBrowser } from "@/lib/simulation";
 import type { CountryNode, TrackSnapshot, TransactionUpdate } from "@/lib/types";
 import { money } from "@/lib/utils";
@@ -37,6 +37,14 @@ export function PaymentSimulator() {
   }, []);
 
   const ctx = origin && dest ? corridorContext(origin.id, dest.id) : null;
+  function applyDemoCorridor(originId: string, destId: string) {
+    const nextOrigin = countries.find((item) => item.id === originId);
+    const nextDest = countries.find((item) => item.id === destId);
+    if (nextOrigin) setOrigin(nextOrigin);
+    if (nextDest) setDest(nextDest);
+    setLegacy(emptyTrack());
+    setSovereign(emptyTrack());
+  }
 
   const dispatch = useCallback((update: TransactionUpdate) => {
     if (activePayment.current && update.paymentId !== activePayment.current) return;
@@ -139,6 +147,31 @@ export function PaymentSimulator() {
             </>
           )}
           <GeopoliticalRiskBadge ctx={ctx} />
+          {ctx?.sanctionedTouch && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-snug text-amber-100">
+              {US_LISTED_CORRIDOR_NOTICE}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 text-[11px]"
+              disabled={running}
+              onClick={() => applyDemoCorridor("ru", "cn")}
+            >
+              Demo: Russia → China
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 text-[11px]"
+              disabled={running}
+              onClick={() => applyDemoCorridor("br", "cn")}
+            >
+              Demo: Brazil → China
+            </Button>
+          </div>
           <label className="text-[11px] text-slate-400">
             Amount ({origin?.fiatCurrency ?? "—"})
             <input
@@ -177,7 +210,7 @@ export function PaymentSimulator() {
           />
           <SettlementPipeline
             title="Sovereign · Swift-RS"
-            subtitle={ctx?.sanctionedTouch ? "Fail-closed compliance" : "Direct CBDC corridor"}
+            subtitle={ctx?.sanctionedTouch ? "Open CBDC rail (non-US)" : "Direct CBDC corridor"}
             route="SovereignRs"
             track={sovereign}
           />

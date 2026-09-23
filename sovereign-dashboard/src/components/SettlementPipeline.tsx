@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SOVEREIGN_BLOCKED_FOOTER } from "@/lib/countries";
 import type { RouteType, TrackSnapshot } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -24,11 +25,13 @@ export function SettlementPipeline({
   subtitle,
   route,
   track,
+  previewSteps,
 }: {
   title: string;
   subtitle: string;
   route: RouteType;
   track: TrackSnapshot;
+  previewSteps?: Array<{ label: string; detail: string }>;
 }) {
   const sovereign = route === "SovereignRs";
   const phaseTone =
@@ -88,7 +91,23 @@ export function SettlementPipeline({
               Awaiting instruction…
             </li>
           )}
+          {track.phase === "blocked" &&
+            previewSteps?.map((step) => (
+              <li
+                key={step.label}
+                className="flex gap-3 rounded-lg border border-dashed border-slate-800/80 bg-slate-950/20 px-3 py-2 opacity-60"
+              >
+                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-slate-600" />
+                <div>
+                  <div className="text-xs font-medium text-slate-400">{step.label}</div>
+                  <div className="text-[11px] text-slate-600">{step.detail}</div>
+                </div>
+              </li>
+            ))}
         </ul>
+        {track.phase === "blocked" && sovereign && previewSteps && previewSteps.length > 0 && (
+          <p className="text-[11px] leading-snug text-slate-500">{SOVEREIGN_BLOCKED_FOOTER}</p>
+        )}
         {track.txHash && track.phase === "settled" && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}

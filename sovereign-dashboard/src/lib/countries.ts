@@ -71,31 +71,37 @@ export function legacyFee(ctx: CorridorContext): number {
   return Math.min(fee, 150);
 }
 
+export const US_LISTED_CORRIDOR_NOTICE =
+  "This corridor touches a jurisdiction often blocked on US correspondent SWIFT rails. Legacy SWIFT may freeze or delay; Sovereign settles on open participant CBDC rails without a dollar nostro hop.";
+
+export const SOVEREIGN_BLOCKED_FOOTER =
+  "Compliance halt on this rail. Choose another corridor or retry after policy review.";
+
 export function riskLabels(ctx: CorridorContext | null) {
   if (!ctx) {
     return {
-      swift: { tone: "slate" as const, text: "Selecione origem e destino" },
-      sovereign: { tone: "slate" as const, text: "Selecione origem e destino" },
+      swift: { tone: "slate" as const, text: "Select origin and destination" },
+      sovereign: { tone: "slate" as const, text: "Select origin and destination" },
     };
   }
   if (ctx.sanctionedTouch) {
     return {
-      swift: { tone: "rose" as const, text: "🔴 Alto risco de bloqueio / sanções" },
+      swift: { tone: "rose" as const, text: "🔴 High US-correspondent / OFAC friction" },
       sovereign: {
-        tone: "amber" as const,
-        text: "🟠 Fail-closed: jurisdição listada — sem liquidação",
+        tone: "emerald" as const,
+        text: "🟢 Open sovereign route (no US SWIFT gate)",
       },
     };
   }
   if (ctx.highSwiftFriction) {
     return {
-      swift: { tone: "amber" as const, text: "🟡 Fricção elevada (USD / correspondente)" },
-      sovereign: { tone: "emerald" as const, text: "🟢 Corredor CBDC direto disponível" },
+      swift: { tone: "amber" as const, text: "🟡 Elevated friction (USD / correspondent)" },
+      sovereign: { tone: "emerald" as const, text: "🟢 Direct CBDC corridor available" },
     };
   }
   return {
-    swift: { tone: "amber" as const, text: "🟡 Correspondente SWIFT (2–5 dias)" },
-    sovereign: { tone: "emerald" as const, text: "🟢 Liquidação soberana (< 2s demo)" },
+    swift: { tone: "amber" as const, text: "🟡 SWIFT correspondent (2–5 days)" },
+    sovereign: { tone: "emerald" as const, text: "🟢 Sovereign settlement (< 2s demo)" },
   };
 }
 

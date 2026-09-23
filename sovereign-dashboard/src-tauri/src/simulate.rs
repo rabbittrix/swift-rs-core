@@ -147,25 +147,27 @@ fn legacy_steps(ctx: &CorridorContext) -> Vec<StepDef> {
 }
 
 fn sovereign_steps(ctx: &CorridorContext) -> Vec<StepDef> {
-    let mut steps = vec![StepDef {
-        label: "ZK-Proof Compliance Validation".into(),
-        detail: if ctx.sanctioned_touch {
-            "Listed jurisdiction detected — fail-closed screen; no proof is issued".into()
-        } else {
-            "Public limit and sanctions-clear flag verified; amount stays private".into()
-        },
-        tone: if ctx.sanctioned_touch { "rose" } else { "blue" }.into(),
-        delay_ms: 380,
-        block_here: ctx.sanctioned_touch,
-    }];
-    if ctx.sanctioned_touch {
-        return steps;
-    }
-    steps.extend([
+    let zk_detail = if ctx.sanctioned_touch {
+        "Open-network policy: no US OFAC correspondent gate; limit proof verified; amount stays private".into()
+    } else {
+        "Public limit and sanctions-clear flag verified; amount stays private".into()
+    };
+    vec![
         StepDef {
-            label: "Direct CBDC Corridor (No USD Correspondent)".into(),
+            label: "ZK-Proof Compliance Validation".into(),
+            detail: zk_detail,
+            tone: "blue".into(),
+            delay_ms: 380,
+            block_here: false,
+        },
+        StepDef {
+            label: if ctx.sanctioned_touch {
+                "Bypassing USD Clearing (Sovereign Rail)".into()
+            } else {
+                "Direct CBDC Corridor (No USD Correspondent)".into()
+            },
             detail: format!(
-                "Routing {} ({}) → {} ({}) without a dollar nostro hop",
+                "Routing {} ({}) → {} ({}) on participant CBDC rails — not the US nostro chain",
                 ctx.origin.cbdc_name, ctx.origin.fiat_currency, ctx.dest.cbdc_name, ctx.dest.fiat_currency
             ),
             tone: "blue".into(),
@@ -193,8 +195,7 @@ fn sovereign_steps(ctx: &CorridorContext) -> Vec<StepDef> {
             delay_ms: 300,
             block_here: false,
         },
-    ]);
-    steps
+    ]
 }
 
 fn legacy_fee(ctx: &CorridorContext) -> f64 {
@@ -265,7 +266,7 @@ pub async fn simulate_payment(request: PaymentRequest, app: AppHandle) -> Result
                 total,
                 label: def.label.clone(),
                 detail: if request.route == RouteType::SovereignRs {
-                    "Sanctions list match — payment cannot be included in a block.".into()
+                    "Policy halt on sovereign rail — settlement not included in this batch.".into()
                 } else {
                     "Corridor frozen by compliance — settlement not released.".into()
                 },
@@ -290,7 +291,7 @@ pub async fn simulate_payment(request: PaymentRequest, app: AppHandle) -> Result
                     timestamp: Utc::now().to_rfc3339(),
                 },
             )?;
-            return Err("corridor blocked by compliance".into());
+            return Ok(payment_id);
         }
 
         let done = TransactionStep {

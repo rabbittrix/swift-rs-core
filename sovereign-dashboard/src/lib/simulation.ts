@@ -97,23 +97,19 @@ function legacySteps(ctx: NonNullable<ReturnType<typeof corridorContext>>): Step
 }
 
 function sovereignSteps(ctx: NonNullable<ReturnType<typeof corridorContext>>): StepDef[] {
-  const head: StepDef[] = [
+  return [
     {
       label: "ZK-Proof Compliance Validation",
       detail: ctx.sanctionedTouch
-        ? "Listed jurisdiction detected — fail-closed screen; no proof is issued"
+        ? "Open-network policy: no US OFAC correspondent gate; limit proof verified; amount stays private"
         : "Public limit and sanctions-clear flag verified; amount stays private",
-      tone: ctx.sanctionedTouch ? "rose" : "blue",
+      tone: "blue",
       delay: 380,
-      blockHere: ctx.sanctionedTouch,
+      blockHere: false,
     },
-  ];
-  if (ctx.sanctionedTouch) return head;
-  return [
-    ...head,
     {
-      label: "Direct CBDC Corridor (No USD Correspondent)",
-      detail: `Routing ${ctx.origin.cbdcName} → ${ctx.dest.cbdcName} without a dollar nostro hop`,
+      label: ctx.sanctionedTouch ? "Bypassing USD Clearing (Sovereign Rail)" : "Direct CBDC Corridor (No USD Correspondent)",
+      detail: `Routing ${ctx.origin.cbdcName} → ${ctx.dest.cbdcName} on participant CBDC rails — not the US nostro chain`,
       tone: "blue",
       delay: 320,
       blockHere: false,
@@ -186,7 +182,7 @@ export async function simulatePaymentBrowser(
           label: def.label,
           detail:
             request.route === "SovereignRs"
-              ? "Sanctions list match — payment cannot be included in a block."
+              ? "Policy halt on sovereign rail — settlement not included in this batch."
               : "Corridor frozen by compliance — settlement not released.",
           tone: "rose",
           status: "blocked",
@@ -197,7 +193,7 @@ export async function simulatePaymentBrowser(
         totalElapsedMs: Math.round(performance.now() - started),
         timestamp: stamp(),
       });
-      throw new Error("corridor blocked by compliance");
+      return paymentId;
     }
     emit({
       paymentId,
