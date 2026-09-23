@@ -23,3 +23,7 @@ tauri = { version = "2", features = [] }
 tokio = { version = "1", features = ["rt", "time"] }
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["clock", "serde"] }
+
+# F: / exFAT / synced folders often cannot hard-link incremental cache files (rustc warning).
+[profile.dev]
+incremental = false
