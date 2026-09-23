@@ -18,7 +18,8 @@ spec:
       - name: gateway
         image: swift-rs-gateway:latest
         ports:
-        - containerPort: 8080
+        - name: http
+          containerPort: 8080
         env:
         - name: RUST_LOG
           value: "info"

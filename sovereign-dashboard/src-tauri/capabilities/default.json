@@ -1,0 +1,6 @@
+{
+  "identifier": "default",
+  "description": "Desktop desk: invoke mock settlement commands and listen for the live feed.",
+  "windows": ["main"],
+  "permissions": ["core:default", "core:event:default"]
+}

@@ -1,0 +1,28 @@
+{
+  "title": "SCBPS settlement",
+  "timezone": "utc",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Height",
+      "targets": [{ "expr": "scbps_chain_height" }]
+    },
+    {
+      "type": "stat",
+      "title": "Base fee",
+      "targets": [{ "expr": "scbps_base_fee" }]
+    },
+    {
+      "type": "stat",
+      "title": "Finalized payments",
+      "targets": [{ "expr": "scbps_finalized_txs" }]
+    },
+    {
+      "type": "stat",
+      "title": "CBDC count",
+      "targets": [{ "expr": "scbps_cbdc_count" }]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

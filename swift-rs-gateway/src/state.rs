@@ -1,12 +1,15 @@
-//! Application state
+use std::sync::Mutex;
 
-/// Application state shared across handlers
+use crate::system::{PaymentSystem, SystemError};
+
 pub struct AppState {
-    // TODO: Add shared resources (database connections, event store, etc.)
+    pub system: Mutex<PaymentSystem>,
 }
 
 impl AppState {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new() -> Result<Self, SystemError> {
+        Ok(Self {
+            system: Mutex::new(PaymentSystem::bootstrap()?),
+        })
     }
 }

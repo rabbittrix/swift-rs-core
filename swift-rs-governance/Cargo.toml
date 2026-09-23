@@ -1,0 +1,15 @@
+[package]
+name = "swift-rs-governance"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Stake-weighted proposals, treasury multi-sig, and dispute stages"
+
+[dependencies]
+thiserror = { workspace = true }
+ed25519-dalek = { workspace = true }
+swift-rs-blockchain = { version = "0.1.0", path = "../swift-rs-blockchain" }

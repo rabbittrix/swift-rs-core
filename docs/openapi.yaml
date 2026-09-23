@@ -1,0 +1,131 @@
+openapi: 3.0.3
+info:
+  title: Swift-RS settlement API
+  version: 0.1.0
+paths:
+  /health:
+    get:
+      summary: Process health
+      responses:
+        "200":
+          description: Healthy
+  /metrics:
+    get:
+      summary: Prometheus text
+      responses:
+        "200":
+          description: Metrics
+  /api/v1/chain/status:
+    get:
+      summary: Height, base fee, reserves, and CBDC count
+      responses:
+        "200":
+          description: Chain status
+  /api/v1/explorer:
+    get:
+      summary: Public commitments without counterparties
+      responses:
+        "200":
+          description: Public records
+  /api/v1/explorer/{tx_id}:
+    get:
+      summary: Regulator view of one payment
+      parameters:
+        - in: path
+          name: tx_id
+          required: true
+          schema: { type: string }
+        - in: header
+          name: x-regulator-key
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Revealed transfer
+        "400":
+          description: Rejected
+  /api/v1/transfers:
+    post:
+      summary: Screen and finalize a transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from, to, asset, amount, purpose]
+              properties:
+                from: { type: string }
+                to: { type: string }
+                asset: { type: string }
+                amount: { type: string }
+                purpose: { type: string }
+      responses:
+        "200":
+          description: Finalized
+        "400":
+          description: Rejected by screening or consensus
+  /api/v1/swaps:
+    post:
+      summary: Atomic BRL/CNY lock and release
+      responses:
+        "200":
+          description: Finalized swap
+  /api/v1/balances/{alias}/{asset}:
+    get:
+      summary: Balance for a demo party
+      parameters:
+        - in: path
+          name: alias
+          required: true
+          schema: { type: string }
+        - in: path
+          name: asset
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Balance
+  /api/v1/governance/proposals:
+    get:
+      summary: List proposals
+      responses:
+        "200":
+          description: Proposals
+    post:
+      summary: Open a proposal
+      responses:
+        "200":
+          description: Proposal id
+  /api/v1/governance/votes:
+    post:
+      summary: Cast a validator vote
+      responses:
+        "204":
+          description: Accepted
+  /api/v1/governance/proposals/{id}/tally:
+    post:
+      summary: Close voting after the deadline
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Passed or rejected
+  /api/v1/rails/{rail}/{tx_id}:
+    get:
+      summary: ISO 20022 export for swift, cips, spfs, or tips
+      parameters:
+        - in: path
+          name: rail
+          required: true
+          schema: { type: string }
+        - in: path
+          name: tx_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: XML credit transfer

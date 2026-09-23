@@ -1,5 +1,5 @@
 # Multi-stage build for Swift-RS Gateway
-FROM rust:1.75 as builder
+FROM rust:1.88-bookworm AS builder
 
 WORKDIR /app
 
@@ -11,6 +11,13 @@ COPY swift-rs-connector ./swift-rs-connector
 COPY swift-rs-cqrs ./swift-rs-cqrs
 COPY swift-rs-gateway ./swift-rs-gateway
 COPY swift-rs-ai ./swift-rs-ai
+COPY swift-rs-blockchain ./swift-rs-blockchain
+COPY swift-rs-cbdc ./swift-rs-cbdc
+COPY swift-rs-tokenization ./swift-rs-tokenization
+COPY swift-rs-privacy ./swift-rs-privacy
+COPY swift-rs-bridge ./swift-rs-bridge
+COPY swift-rs-governance ./swift-rs-governance
+COPY swift-rs-economics ./swift-rs-economics
 
 # Build release
 RUN cargo build --release --bin swift-rs-gateway

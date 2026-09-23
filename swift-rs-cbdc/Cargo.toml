@@ -1,0 +1,14 @@
+[package]
+name = "swift-rs-cbdc"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Multi-CBDC lock, release, and proof-of-reserves for cross-border settlement"
+
+[dependencies]
+thiserror = { workspace = true }
+swift-rs-blockchain = { version = "0.1.0", path = "../swift-rs-blockchain" }

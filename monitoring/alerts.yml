@@ -1,0 +1,17 @@
+groups:
+  - name: scbps
+    rules:
+      - alert: GatewayDown
+        expr: up{job="swift-rs-gateway"} == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: Settlement gateway is down
+      - alert: FinalityStalled
+        expr: increase(scbps_chain_height[10m]) == 0 and scbps_chain_height > 0
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: No new finalized height for 15 minutes

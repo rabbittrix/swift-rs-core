@@ -5,6 +5,7 @@ import PaymentFlows from "@/components/PaymentFlows";
 import RiskScoring from "@/components/RiskScoring";
 import LatencyMetrics from "@/components/LatencyMetrics";
 import SystemStatus from "@/components/SystemStatus";
+import LedgerStatus from "@/components/LedgerStatus";
 import Header from "@/components/Header";
 
 export default function Home() {
@@ -48,6 +49,10 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <SystemStatus isConnected={isConnected} />
+          <LedgerStatus />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <LatencyMetrics />
         </div>
 

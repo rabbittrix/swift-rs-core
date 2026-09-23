@@ -1,57 +1,59 @@
-# Swift-RS Dashboard
+# Swift-RS operator dashboard
 
-Modern Next.js dashboard for monitoring the Swift-RS financial messaging engine.
+Next.js view of the gateway: health, ledger reserves, payment flows, risk scores, and latency.
+
+This is the operator console. The side-by-side legacy and sovereign demonstration lives in [`../sovereign-dashboard`](../sovereign-dashboard/README.md).
 
 ## Features
 
-- **Real-time Payment Flows**: Live stream of payment messages (MT/MX)
-- **AI Risk Scoring**: Fraud detection and anomaly analysis visualization
-- **Latency Metrics**: P50, P95, P99 latency tracking with <5ms target
-- **System Status**: Gateway health monitoring and connection status
+- **Gateway health** polled from `/api/swift/health`
+- **Ledger status**: height, CBDC reserves, and the BRL/CNY oracle, from `/api/swift/chain/status`
+- **Payment flows** for messages accepted by the gateway
+- **Risk scoring** from the AI scorer
+- **Latency** percentiles reported by the metrics panel
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
+- Node.js 18+
+- Gateway on [http://localhost:8080](http://localhost:8080)
 
-- Node.js 18+ and npm
-- Swift-RS Gateway running on `http://localhost:8080`
+```bash
+# from the repo root
+cargo run --bin swift-rs-gateway
+```
 
-### Installation
+## Run
 
 ```bash
 cd dashboard
 npm install
-```
-
-### Development
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Build for Production
+Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
 npm run build
 npm start
 ```
 
-## Architecture
+## How it talks to the gateway
 
-- **Next.js 14** with App Router
-- **TypeScript** for type safety
-- **Tailwind CSS** for styling
-- **Recharts** for data visualization
-- **Real-time updates** via polling (can be upgraded to WebSockets)
+`next.config.js` rewrites `/api/swift/*` to the gateway:
 
-## API Integration
+| Browser path | Gateway |
+| --- | --- |
+| `/api/swift/health` | `GET /health` |
+| `/api/swift/chain/status` | `GET /api/v1/chain/status` |
+| `/api/swift/messages` | `POST /api/v1/messages` |
+| `/api/swift/transfers` | `POST /api/v1/transfers` |
+| `/api/swift/swaps` | `POST /api/v1/swaps` |
 
-The dashboard connects to the Swift-RS Gateway API via proxy configured in `next.config.js`:
+`NEXT_PUBLIC_GATEWAY_URL` overrides the gateway origin. The default is `http://localhost:8080`.
 
-- Health check: `/api/swift/health`
-- Messages: `/api/swift/messages`
+## Stack
+
+Next.js 14 (App Router), TypeScript, Tailwind CSS, Recharts. The ledger panel polls; it does not open a WebSocket.
 
 ## License
 

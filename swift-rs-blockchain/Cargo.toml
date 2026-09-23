@@ -1,0 +1,22 @@
+[package]
+name = "swift-rs-blockchain"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Permissioned BFT ledger, Merkle proofs, payment channels, and a WASM policy sandbox"
+
+[dependencies]
+serde = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+sha3 = { workspace = true }
+ed25519-dalek = { workspace = true }
+hex = { workspace = true }
+wasmi = { workspace = true }
+wat = { workspace = true }
+fips204 = "0.4.5"
+rand_chacha = "0.3"

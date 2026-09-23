@@ -1,71 +1,96 @@
-# ⚡ Swift-RS: Next-Gen Financial Messaging Engine
+# Swift-RS
 
-> _Breaking the Java Hegemony with Rust Performance, Safety, and AI Intelligence._
+Permissioned cross-border settlement in Rust: ISO 20022 messaging, a BFT ledger, multi-CBDC swap, and fail-closed sanctions screening.
 
 [![Rust](https://img.shields.io/badge/built_with-Rust-orange?logo=rust)](https://www.rust-lang.org/)
 [![Architecture](https://img.shields.io/badge/pattern-CQRS%2FES-blue)](https://martinfowler.com/bliki/CQRS.html)
 [![Standard](https://img.shields.io/badge/ISO-20022%20%7C%20MT%2FMX-compliant-green)](https://www.iso20022.org/)
-[![Docker](https://img.shields.io/badge/deployment-Kubernetes-blue?logo=kubernetes)](https://kubernetes.io/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-## 🚀 Quick Start
+## Quick start
 
-### Backend (Rust)
+### Gateway
 
 ```bash
-# Build all crates
-cargo build --release
-
-# Run the API Gateway
+cargo test --workspace
 cargo run --bin swift-rs-gateway
 ```
 
-### Frontend (Next.js Dashboard)
+The gateway listens on [http://localhost:8080](http://localhost:8080). `GET /health` returns the process status. After bootstrap, chain status is `GET /api/v1/chain/status`.
+
+A release build of `finalize_batch` on 2,000 pre-signed transfers measured above 1,000 TPS. That figure is the settlement batch, not the desktop demonstration feed.
+
+### Operator dashboard
 
 ```bash
-# Navigate to dashboard directory
 cd dashboard
-
-# Install dependencies
 npm install
-
-# Run development server
 npm run dev
 ```
 
-The dashboard will be available at [http://localhost:3000](http://localhost:3000)
+[http://localhost:3000](http://localhost:3000) proxies `/api/swift/*` to the gateway. Start the gateway first.
 
-### Docker Compose (Full Stack)
+### Sovereign desk
 
 ```bash
-# Start all services (Gateway, Dashboard, PostgreSQL, Kafka)
+cd sovereign-dashboard
+npm install
+npm run dev
+```
+
+[http://127.0.0.1:1420](http://127.0.0.1:1420) is the investor demonstration (legacy rail beside Swift-RS). `npm run tauri dev` opens the same UI in a desktop window. This package is outside the Cargo workspace. Its network chart is a simulated corridor, not the ledger benchmark above.
+
+### Docker Compose
+
+```bash
 docker-compose up -d
 ```
 
-## 📦 Project Structure
+This starts the gateway, the Next.js dashboard, PostgreSQL, and Kafka.
 
-This is a Rust workspace containing the following crates:
+## Workspace
 
-- **swift-rs-core**: Domain logic and message validation
-- **swift-rs-iso20022**: High-performance ISO 20022 (MX) serializer/deserializer
-- **swift-rs-connector**: Secure connectivity layer (VPN/SNA/AMQP)
-- **swift-rs-cqrs**: Lightweight Event Sourcing implementation
-- **swift-rs-gateway**: API Gateway (gRPC/REST)
-- **swift-rs-ai**: AI/ML inference layer for fraud detection
+| Crate | Role |
+| --- | --- |
+| `swift-rs-core` | Domain types and message validation |
+| `swift-rs-iso20022` | ISO 20022 parse and serialize |
+| `swift-rs-connector` | Connectivity adapters |
+| `swift-rs-cqrs` | In-process event store |
+| `swift-rs-gateway` | HTTP API for messages, transfers, swaps, explorer, and governance |
+| `swift-rs-ai` | Risk score used before finality |
+| `swift-rs-blockchain` | Stake-weighted BFT (67%), Merkle proofs, channels, shards, WASM predicates, optimistic rollups, hybrid ed25519 + ML-DSA-44 |
+| `swift-rs-cbdc` | Five CBDCs (BRL, CNY, INR, AED, EUR), lock/release, reserves |
+| `swift-rs-tokenization` | Security tokens and stablecoins |
+| `swift-rs-privacy` | KYC and sanctions screening, regulator envelope, Groth16 limit proof |
+| `swift-rs-bridge` | ISO 20022 rail translation and the FX oracle |
+| `swift-rs-governance` | Stake-weighted votes, treasury, disputes |
+| `swift-rs-economics` | Base fee, slashing, genesis amounts |
 
-## 🏗 Architecture
+`sovereign-dashboard/` is a separate Tauri application and is not a workspace member.
 
-See [.project_information.md](.project_information.md) for detailed architecture documentation.
+Settlement checks are described in [docs/architecture.md](docs/architecture.md).
 
-## 🛡️ Security & Compliance
+## What the ledger does
 
-- Memory Safety: Rust guarantees protection against buffer overflows
-- Encryption: TLS 1.3 and AES-256
-- Audit: Every state change is an immutable event
+- A block is final at 67% of validator stake. Jailed stake stays in the quorum denominator.
+- Screening is fail-closed. A sanctioned or unknown party cannot be included, including through a swap or an imported ISO draft. Sanctions-list changes are governance proposals.
+- The public explorer stores a commitment, asset, and purpose. Parties and amounts are opened with the regulator envelope.
+- A Groth16 proof shows a payment is under a public limit and sanctions-clear. The amount is a witness. A listed party is rejected before a proof is built. Setup is local, not a ceremony.
+- Hybrid signatures (ed25519 and ML-DSA-44) are required together on the local five-bank pilot vote path. The hot path for ordinary certificates stays ed25519.
+- Optimistic rollups post a state root and revert it if a challenge replay disagrees.
+- The five-bank pilot (BR, CN, IN, AE, EU) is an in-process consortium.
 
-## 📄 License
+## Limits
+
+- Rail adapters translate ISO 20022. They do not open live sessions to SWIFT, CIPS, SPFS, or TIPS.
+- The pilot is not a connection to a live central bank.
+- An external security firm has not audited this tree.
+- Demo seeds and the regulator secret `demo-regulator` are for local runs only.
+
+## License
 
 Apache-2.0
 
-## 👤 Author
+## Author
 
 Roberto de Souza <rabbittrix@hotmail.com>

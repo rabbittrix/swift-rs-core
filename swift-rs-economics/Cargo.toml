@@ -1,0 +1,13 @@
+[package]
+name = "swift-rs-economics"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Base-fee market, validator slashing amounts, and genesis token allocation"
+
+[dependencies]
+thiserror = { workspace = true }
