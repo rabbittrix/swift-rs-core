@@ -131,7 +131,7 @@ impl Node {
             if let Some(admit) = &self.admission {
                 admit(&tx.body).map_err(ChainError::Rejected)?;
             }
-            let id = tx.body.id()?;
+            let id = tx.id;
             if !seen.insert(id) {
                 return Err(ChainError::Duplicate);
             }

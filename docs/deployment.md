@@ -3,7 +3,7 @@
 ## Local
 
 ```bash
-cargo test --workspace
+cargo test --workspace --release
 cargo run --bin swift-rs-gateway
 ```
 

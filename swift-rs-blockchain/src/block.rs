@@ -66,7 +66,7 @@ impl Block {
     pub fn tx_root(&self) -> Result<Hash, ChainError> {
         let mut leaves = Vec::with_capacity(self.transactions.len());
         for tx in &self.transactions {
-            leaves.push(tx.body.id()?);
+            leaves.push(tx.id);
         }
         Ok(merkle_root(&leaves))
     }

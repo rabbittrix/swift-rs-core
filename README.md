@@ -12,7 +12,7 @@ Permissioned cross-border settlement in Rust: ISO 20022 messaging, a BFT ledger,
 ### Gateway
 
 ```bash
-cargo test --workspace
+cargo test --workspace --release
 cargo run --bin swift-rs-gateway
 ```
 

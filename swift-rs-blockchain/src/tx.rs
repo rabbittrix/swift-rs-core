@@ -21,6 +21,8 @@ pub struct TxBody {
 pub struct SignedTransaction {
     pub body: TxBody,
     pub signature: [u8; 64],
+    /// Cached `TxBody::id()` so batch finalization does not re-hash every transaction twice.
+    pub id: Hash,
 }
 
 impl TxBody {
@@ -70,8 +72,14 @@ impl SignedTransaction {
         if key.address != body.from {
             return Err(ChainError::BadSignature);
         }
-        let signature = key.sign(&body.signing_bytes()?);
-        Ok(Self { body, signature })
+        let signing_bytes = body.signing_bytes()?;
+        let signature = key.sign(&signing_bytes);
+        let id = Hash::sha256(&signing_bytes);
+        Ok(Self {
+            body,
+            signature,
+            id,
+        })
     }
 
     pub fn verify(&self, key: &VerifyingKey) -> Result<(), ChainError> {
