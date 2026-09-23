@@ -51,8 +51,18 @@ export const useDesk = create<DeskState>((set, get) => ({
     void get().rememberBatch([row]);
   },
   rememberBatch: async (rows) => {
-    const history = await appendLedgerEntries(rows);
-    set({ history });
+    try {
+      const history = await appendLedgerEntries(rows);
+      set({ history });
+    } catch (error) {
+      console.error("ledger persist failed", error);
+      set((state) => ({
+        history: [...rows, ...state.history.filter((row) => !rows.some((item) => item.id === row.id))].slice(
+          0,
+          500,
+        ),
+      }));
+    }
   },
 }));
 

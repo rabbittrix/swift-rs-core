@@ -63,10 +63,10 @@ pub struct CurrencyBalance {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct LedgerRow {
     pub id: String,
     pub date: String,
+    #[serde(rename = "type")]
     pub r#type: String,
     pub amount: String,
     pub currency: String,

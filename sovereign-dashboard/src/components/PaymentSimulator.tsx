@@ -12,7 +12,7 @@ import {
   subscribeTransactionUpdates,
 } from "@/lib/api";
 import { corridorContext, legacyFee, US_LISTED_CORRIDOR_NOTICE } from "@/lib/countries";
-import { ledgerRowFromSimulation } from "@/lib/ledgerRows";
+import { ledgerRowFromSimulation, ledgerRowFromTrack } from "@/lib/ledgerRows";
 import { applyUpdate, cbdcPair, emptyTrack, simulatePaymentBrowser } from "@/lib/simulation";
 import type { CountryNode, RouteType, TrackSnapshot, TransactionUpdate } from "@/lib/types";
 import { money } from "@/lib/utils";
@@ -29,6 +29,8 @@ export function PaymentSimulator() {
   const [sovereign, setSovereign] = useState<TrackSnapshot>(emptyTrack());
   const activePayment = useRef<string | null>(null);
   const ledgerCollector = useRef<((update: TransactionUpdate) => void) | null>(null);
+  const legacyRef = useRef<TrackSnapshot>(emptyTrack());
+  const sovereignRef = useRef<TrackSnapshot>(emptyTrack());
 
   useEffect(() => {
     void getAvailableCountries().then((list) => {
@@ -50,8 +52,19 @@ export function PaymentSimulator() {
 
   const dispatch = useCallback((update: TransactionUpdate) => {
     if (activePayment.current && update.paymentId !== activePayment.current) return;
-    if (update.route === "LegacySwift") setLegacy((track) => applyUpdate(track, update));
-    else setSovereign((track) => applyUpdate(track, update));
+    if (update.route === "LegacySwift") {
+      setLegacy((track) => {
+        const next = applyUpdate(track, update);
+        legacyRef.current = next;
+        return next;
+      });
+    } else {
+      setSovereign((track) => {
+        const next = applyUpdate(track, update);
+        sovereignRef.current = next;
+        return next;
+      });
+    }
     ledgerCollector.current?.(update);
   }, []);
 
@@ -83,30 +96,43 @@ export function PaymentSimulator() {
     setRunning(true);
     const id = crypto.randomUUID();
     activePayment.current = id;
-    setLegacy({ ...emptyTrack(), phase: "running" });
-    setSovereign({ ...emptyTrack(), phase: "running" });
+    const runningTrack = { ...emptyTrack(), phase: "running" as const };
+    legacyRef.current = runningTrack;
+    sovereignRef.current = runningTrack;
+    setLegacy(runningTrack);
+    setSovereign(runningTrack);
     const recorded = new Set<string>();
     const ledgerRows: ReturnType<typeof ledgerRowFromSimulation>[] = [];
+    const pushRow = (row: ReturnType<typeof ledgerRowFromSimulation> | null) => {
+      if (!row || ledgerRows.some((item) => item.id === row.id)) return;
+      ledgerRows.push(row);
+    };
     ledgerCollector.current = (update) => {
       if (update.paymentId !== id) return;
       if (update.kind !== "complete" && update.kind !== "blocked") return;
       const key = `${update.route}:${update.kind}`;
       if (recorded.has(key)) return;
       recorded.add(key);
-      ledgerRows.push(
+      pushRow(
         ledgerRowFromSimulation(id, update.route as RouteType, update, origin, dest, amount),
       );
     };
     const sink = (update: TransactionUpdate) => dispatch(update);
-    await Promise.allSettled([
-      launch(id, origin.id, dest.id, "LegacySwift", sink),
-      launch(id, origin.id, dest.id, "SovereignRs", sink),
-    ]);
-    ledgerCollector.current = null;
-    if (ledgerRows.length > 0) {
-      await rememberBatch(ledgerRows);
+    try {
+      await Promise.allSettled([
+        launch(id, origin.id, dest.id, "LegacySwift", sink),
+        launch(id, origin.id, dest.id, "SovereignRs", sink),
+      ]);
+      pushRow(ledgerRowFromTrack(id, "LegacySwift", legacyRef.current, origin, dest, amount));
+      pushRow(ledgerRowFromTrack(id, "SovereignRs", sovereignRef.current, origin, dest, amount));
+      if (ledgerRows.length > 0) {
+        await rememberBatch(ledgerRows);
+      }
+    } finally {
+      ledgerCollector.current = null;
+      activePayment.current = null;
+      setRunning(false);
     }
-    setRunning(false);
   }
 
   const pair = origin && dest ? cbdcPair(origin.id, dest.id) : { from: "—", to: "—" };

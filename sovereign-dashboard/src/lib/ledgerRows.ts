@@ -1,4 +1,11 @@
-import type { CountryNode, LedgerRow, LiveTransaction, RouteType, TransactionUpdate } from "./types";
+import type {
+  CountryNode,
+  LedgerRow,
+  LiveTransaction,
+  RouteType,
+  TrackSnapshot,
+  TransactionUpdate,
+} from "./types";
 import { money } from "./utils";
 
 function bindingHash(paymentId: string, route: RouteType): string {
@@ -28,6 +35,30 @@ export function ledgerRowFromSimulation(
     currency: `${origin.fiatCurrency}-CBDC`,
     status: settled ? "Settled" : "Blocked",
     tx_hash: update.txHash ?? bindingHash(paymentId, route),
+    verified: route === "SovereignRs" && settled,
+    route,
+    corridor: `${origin.name} (${origin.fiatCurrency}) → ${dest.name} (${dest.fiatCurrency})`,
+  };
+}
+
+export function ledgerRowFromTrack(
+  paymentId: string,
+  route: RouteType,
+  track: TrackSnapshot,
+  origin: CountryNode,
+  dest: CountryNode,
+  amount: number,
+): LedgerRow | null {
+  if (track.phase !== "settled" && track.phase !== "blocked") return null;
+  const settled = track.phase === "settled";
+  return {
+    id: `${paymentId}-${route === "LegacySwift" ? "legacy" : "sovereign"}`,
+    date: new Date().toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }),
+    type: "Swap",
+    amount: money(amount),
+    currency: `${origin.fiatCurrency}-CBDC`,
+    status: settled ? "Settled" : "Blocked",
+    tx_hash: track.txHash ?? bindingHash(paymentId, route),
     verified: route === "SovereignRs" && settled,
     route,
     corridor: `${origin.name} (${origin.fiatCurrency}) → ${dest.name} (${dest.fiatCurrency})`,
