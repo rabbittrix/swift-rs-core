@@ -11,4 +11,4 @@ description = "Security tokens, collateralized stablecoins, and an asset registr
 
 [dependencies]
 thiserror = { workspace = true }
-swift-rs-blockchain = { version = "0.1.0", path = "../swift-rs-blockchain" }
+swift-rs-blockchain = { workspace = true }

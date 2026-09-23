@@ -1,4 +1,5 @@
 mod commands;
+mod countries;
 mod simulate;
 
 /// Desktop shell for the investor demonstration.
@@ -17,6 +18,8 @@ pub fn run() {
             commands::get_transactions,
             commands::simulate_live_transaction,
             simulate::simulate_payment,
+            countries::get_available_countries,
+            countries::get_global_network_snapshot_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running the sovereign desk");

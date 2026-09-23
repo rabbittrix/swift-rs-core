@@ -13,7 +13,7 @@ description = "Fail-closed compliance screening and regulator-escrowed selective
 thiserror = { workspace = true }
 aes-gcm = { workspace = true }
 sha2 = { workspace = true }
-swift-rs-blockchain = { version = "0.1.0", path = "../swift-rs-blockchain" }
+swift-rs-blockchain = { workspace = true }
 ark-bn254 = "0.4.0"
 ark-ff = "0.4.2"
 ark-groth16 = "0.4.0"

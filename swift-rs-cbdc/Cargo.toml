@@ -11,4 +11,4 @@ description = "Multi-CBDC lock, release, and proof-of-reserves for cross-border 
 
 [dependencies]
 thiserror = { workspace = true }
-swift-rs-blockchain = { version = "0.1.0", path = "../swift-rs-blockchain" }
+swift-rs-blockchain = { workspace = true }

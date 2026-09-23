@@ -26,15 +26,15 @@ tracing-subscriber = { workspace = true }
 uuid = { workspace = true }
 
 # Internal deps
-swift-rs-core = { version = "0.1.0", path = "../swift-rs-core" }
-swift-rs-iso20022 = { version = "0.1.0", path = "../swift-rs-iso20022" }
-swift-rs-connector = { version = "0.1.0", path = "../swift-rs-connector" }
-swift-rs-cqrs = { version = "0.1.0", path = "../swift-rs-cqrs" }
-swift-rs-ai = { version = "0.1.0", path = "../swift-rs-ai" }
-swift-rs-blockchain = { version = "0.1.0", path = "../swift-rs-blockchain" }
-swift-rs-cbdc = { version = "0.1.0", path = "../swift-rs-cbdc" }
-swift-rs-tokenization = { version = "0.1.0", path = "../swift-rs-tokenization" }
-swift-rs-privacy = { version = "0.1.0", path = "../swift-rs-privacy" }
-swift-rs-bridge = { version = "0.1.0", path = "../swift-rs-bridge" }
-swift-rs-governance = { version = "0.1.0", path = "../swift-rs-governance" }
-swift-rs-economics = { version = "0.1.0", path = "../swift-rs-economics" }
+swift-rs-core = { workspace = true }
+swift-rs-iso20022 = { workspace = true }
+swift-rs-connector = { workspace = true }
+swift-rs-cqrs = { workspace = true }
+swift-rs-ai = { workspace = true }
+swift-rs-blockchain = { workspace = true }
+swift-rs-cbdc = { workspace = true }
+swift-rs-tokenization = { workspace = true }
+swift-rs-privacy = { workspace = true }
+swift-rs-bridge = { workspace = true }
+swift-rs-governance = { workspace = true }
+swift-rs-economics = { workspace = true }

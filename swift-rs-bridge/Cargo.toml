@@ -12,5 +12,5 @@ description = "ISO 20022 rail translation and a threshold FX oracle"
 [dependencies]
 thiserror = { workspace = true }
 ed25519-dalek = { workspace = true }
-swift-rs-blockchain = { version = "0.1.0", path = "../swift-rs-blockchain" }
-swift-rs-iso20022 = { version = "0.1.0", path = "../swift-rs-iso20022" }
+swift-rs-blockchain = { workspace = true }
+swift-rs-iso20022 = { workspace = true }

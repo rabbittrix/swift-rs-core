@@ -30,15 +30,16 @@ npm run dev
 
 [http://localhost:3000](http://localhost:3000) proxies `/api/swift/*` to the gateway. Start the gateway first.
 
-### Sovereign desk
+### SovereignPay (investor desk)
 
 ```bash
 cd sovereign-dashboard
 npm install
-npm run dev
+npm run dev          # browser
+npm run tauri dev    # Tauri v2 desktop
 ```
 
-[http://127.0.0.1:1420](http://127.0.0.1:1420) is the investor demonstration (legacy rail beside Swift-RS). `npm run tauri dev` opens the same UI in a desktop window. This package is outside the Cargo workspace. Its network chart is a simulated corridor, not the ledger benchmark above.
+[SovereignPay](sovereign-dashboard/README.md) streams dual-rail settlement steps from Rust via `transaction_update` events (`simulate_payment` in `src-tauri/src/simulate.rs`). The network TPS chart is a simulated corridor, not the ledger benchmark above.
 
 ### Docker Compose
 
@@ -69,6 +70,8 @@ This starts the gateway, the Next.js dashboard, PostgreSQL, and Kafka.
 `sovereign-dashboard/` is a separate Tauri application and is not a workspace member.
 
 Settlement checks are described in [docs/architecture.md](docs/architecture.md).
+
+Release version is **0.2.0** (see root [`VERSION`](VERSION) and `[workspace.package]` in `Cargo.toml`). `GET /health` and `GET /api/v1/chain/status` report `system_version` from the gateway crate.
 
 ## What the ledger does
 

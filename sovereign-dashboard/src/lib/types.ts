@@ -1,5 +1,42 @@
 export type RouteKind = "LEGACY" | "SOVEREIGN";
 export type RouteType = "LegacySwift" | "SovereignRs";
+export type Region =
+  | "SouthAmerica"
+  | "NorthAmerica"
+  | "Europe"
+  | "Asia"
+  | "MiddleEast"
+  | "Africa";
+
+export interface CountryNode {
+  id: string;
+  name: string;
+  region: Region;
+  centralBank: string;
+  fiatCurrency: string;
+  cbdcName: string;
+  isSanctioned: boolean;
+  swiftMember: boolean;
+  flag: string;
+  mapX: number;
+  mapY: number;
+}
+
+export interface RegionActivity {
+  region: Region;
+  label: string;
+  activeNodes: number;
+}
+
+export interface CorridorVolume {
+  pair: string;
+  volumeUsd: string;
+}
+
+export interface GlobalNetworkSnapshot {
+  regions: RegionActivity[];
+  corridors: CorridorVolume[];
+}
 export type DeskView = "simulator" | "network" | "wallet" | "compliance";
 export type StepState = "idle" | "active" | "done" | "blocked";
 export type PaymentState = "idle" | "running" | "settled" | "blocked";
@@ -15,11 +52,9 @@ export interface PaymentRequest {
 
 export interface SimulatePaymentRequest {
   paymentId?: string;
-  from: string;
-  to: string;
+  originCountryId: string;
+  destinationCountryId: string;
   amount: number;
-  currencyFrom: string;
-  currencyTo: string;
   route: RouteType;
 }
 

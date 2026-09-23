@@ -17,7 +17,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Roberto de Souza <rabbittrix@hotmail.com>"]
 license = "Apache-2.0"
@@ -82,3 +82,18 @@ uuid = { version = "1.6", features = ["v4", "serde"] }
 # Utilities
 bytes = "1.5"
 futures = "0.3"
+
+# Internal crates (version tracks [workspace.package])
+swift-rs-core = { version = "0.2.0", path = "swift-rs-core" }
+swift-rs-iso20022 = { version = "0.2.0", path = "swift-rs-iso20022" }
+swift-rs-connector = { version = "0.2.0", path = "swift-rs-connector" }
+swift-rs-cqrs = { version = "0.2.0", path = "swift-rs-cqrs" }
+swift-rs-gateway = { version = "0.2.0", path = "swift-rs-gateway" }
+swift-rs-ai = { version = "0.2.0", path = "swift-rs-ai" }
+swift-rs-blockchain = { version = "0.2.0", path = "swift-rs-blockchain" }
+swift-rs-cbdc = { version = "0.2.0", path = "swift-rs-cbdc" }
+swift-rs-tokenization = { version = "0.2.0", path = "swift-rs-tokenization" }
+swift-rs-privacy = { version = "0.2.0", path = "swift-rs-privacy" }
+swift-rs-bridge = { version = "0.2.0", path = "swift-rs-bridge" }
+swift-rs-governance = { version = "0.2.0", path = "swift-rs-governance" }
+swift-rs-economics = { version = "0.2.0", path = "swift-rs-economics" }

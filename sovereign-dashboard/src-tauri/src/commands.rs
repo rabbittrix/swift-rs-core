@@ -103,23 +103,16 @@ fn now_id(prefix: &str) -> String {
 }
 
 fn validators() -> Vec<ValidatorNode> {
-    vec![
-        node("br", "Banco Central do Brasil", "Brasília", 30.0, 68.0),
-        node("cn", "PBOC", "Beijing", 78.0, 38.0),
-        node("ae", "Central Bank of the UAE", "Abu Dhabi", 62.0, 48.0),
-        node("in", "Reserve Bank of India", "Mumbai", 70.0, 54.0),
-        node("eu", "ECB", "Frankfurt", 48.0, 36.0),
-    ]
-}
-
-fn node(id: &str, name: &str, city: &str, x: f64, y: f64) -> ValidatorNode {
-    ValidatorNode {
-        id: id.into(),
-        name: name.into(),
-        city: city.into(),
-        x,
-        y,
-    }
+    crate::countries::country_catalog()
+        .into_iter()
+        .map(|country| ValidatorNode {
+            id: country.id,
+            name: country.central_bank,
+            city: country.name,
+            x: country.map_x,
+            y: country.map_y,
+        })
+        .collect()
 }
 
 fn next_live() -> LiveTransaction {

@@ -1,10 +1,10 @@
-import type { RouteType, SimulatePaymentRequest, TransactionUpdate } from "./types";
+import { corridorContext, findCountry, legacyFee } from "./countries";
+import type { SimulatePaymentRequest, TrackSnapshot, TransactionUpdate } from "./types";
 
 type Emit = (update: TransactionUpdate) => void;
 
-function restricted(name: string): boolean {
-  const value = name.toLowerCase();
-  return value.includes("restricted") || value.includes("sanction");
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function demoHash(seed: string): string {
@@ -16,33 +16,141 @@ function demoHash(seed: string): string {
   return `0x${acc.toString(16).padStart(16, "0").repeat(2)}`;
 }
 
-function wait(ms: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
+interface StepDef {
+  label: string;
+  detail: string;
+  tone: "amber" | "emerald" | "blue" | "rose";
+  delay: number;
+  blockHere: boolean;
 }
 
-const LEGACY = [
-  { label: "Routing via Correspondent Bank (NY)", detail: "Instruction queued at the nostro agent in New York", tone: "amber" as const, delay: 1400, block: false },
-  { label: "Waiting for USD Clearing", detail: "Dollar leg parked in the correspondent chain", tone: "amber" as const, delay: 1500, block: false },
-  { label: "OFAC / Sanctions Compliance Check", detail: "Name screen pending at the intermediary", tone: "amber" as const, delay: 1600, block: true },
-  { label: "Intermediary Fees Applied", detail: "Correspondent and FX mark-ups deducted", tone: "amber" as const, delay: 1300, block: false },
-  { label: "Final Settlement", detail: "Beneficiary credit after the chain completes", tone: "amber" as const, delay: 1200, block: false },
-];
+function legacySteps(ctx: NonNullable<ReturnType<typeof corridorContext>>): StepDef[] {
+  const steps: StepDef[] = [
+    {
+      label: `Routing via Correspondent Bank (${ctx.usdCorridor ? "NY" : "London"})`,
+      detail: `${ctx.origin.fiatCurrency} → ${ctx.dest.fiatCurrency} instructed through a nostro agent`,
+      tone: "amber",
+      delay: ctx.highSwiftFriction ? 1800 : 1400,
+      blockHere: false,
+    },
+  ];
+  if (ctx.usdCorridor || ctx.highSwiftFriction) {
+    steps.push({
+      label: "Waiting for USD Clearing (New York)",
+      detail: "Dollar leg parked while compliance queues the instruction",
+      tone: "amber",
+      delay: 2000,
+      blockHere: false,
+    });
+  }
+  if (ctx.sanctionedTouch) {
+    steps.push(
+      {
+        label: "OFAC Sanctions Screening Triggered",
+        detail: `Hit on ${ctx.origin.name} or ${ctx.dest.name} — enhanced due diligence required`,
+        tone: "rose",
+        delay: 2200,
+        blockHere: false,
+      },
+      {
+        label: "Correspondent Bank in NY Freezing Assets for Review",
+        detail: "Funds held pending legal review; beneficiary credit blocked",
+        tone: "rose",
+        delay: 2400,
+        blockHere: true,
+      },
+    );
+  } else {
+    steps.push({
+      label: "OFAC / Sanctions Compliance Check",
+      detail: "Name screen pending at the intermediary",
+      tone: "amber",
+      delay: 1600,
+      blockHere: false,
+    });
+  }
+  steps.push({
+    label: "Intermediary Fees Applied",
+    detail: "Correspondent, FX, and compliance mark-ups deducted",
+    tone: "amber",
+    delay: 1500,
+    blockHere: false,
+  });
+  if (ctx.sanctionedTouch) {
+    steps.push({
+      label: "Transaction Rejected or Delayed (High Risk)",
+      detail: "SWIFT chain will not release without manual exception (often denied)",
+      tone: "rose",
+      delay: 2000,
+      blockHere: true,
+    });
+  } else {
+    steps.push({
+      label: "Final Settlement",
+      detail: "Beneficiary credit after the correspondent chain completes (2–5 days)",
+      tone: "amber",
+      delay: 1800,
+      blockHere: false,
+    });
+  }
+  return steps;
+}
 
-const SOVEREIGN = [
-  { label: "ZK-Proof Compliance Validation", detail: "Public limit and sanctions-clear flag verified; amount stays private", tone: "blue" as const, delay: 350, block: true },
-  { label: "Lock BRL-CBDC in Smart Contract", detail: "Source units locked by the issuing central bank", tone: "blue" as const, delay: 400, block: false },
-  { label: "Execute Atomic Swap (Oracle Price)", detail: "Both legs settle together or the batch aborts", tone: "emerald" as const, delay: 450, block: false },
-  { label: "BFT Consensus Reached (67% Nodes)", detail: "Stake-weighted certificate from the local validator set", tone: "emerald" as const, delay: 400, block: false },
-  { label: "Final Irreversible Settlement", detail: "Proof binding published to the explorer commitment", tone: "emerald" as const, delay: 350, block: false },
-];
+function sovereignSteps(ctx: NonNullable<ReturnType<typeof corridorContext>>): StepDef[] {
+  const head: StepDef[] = [
+    {
+      label: "ZK-Proof Compliance Validation",
+      detail: ctx.sanctionedTouch
+        ? "Listed jurisdiction detected — fail-closed screen; no proof is issued"
+        : "Public limit and sanctions-clear flag verified; amount stays private",
+      tone: ctx.sanctionedTouch ? "rose" : "blue",
+      delay: 380,
+      blockHere: ctx.sanctionedTouch,
+    },
+  ];
+  if (ctx.sanctionedTouch) return head;
+  return [
+    ...head,
+    {
+      label: "Direct CBDC Corridor (No USD Correspondent)",
+      detail: `Routing ${ctx.origin.cbdcName} → ${ctx.dest.cbdcName} without a dollar nostro hop`,
+      tone: "blue",
+      delay: 320,
+      blockHere: false,
+    },
+    {
+      label: "mBridge-Style Atomic Swap (Oracle Price)",
+      detail: "Both CBDC legs lock and release in one batch",
+      tone: "emerald",
+      delay: 420,
+      blockHere: false,
+    },
+    {
+      label: "BFT Consensus Reached (67% Validators)",
+      detail: "Regional central-bank validators co-sign the batch",
+      tone: "emerald",
+      delay: 380,
+      blockHere: false,
+    },
+    {
+      label: "Final Irreversible Settlement",
+      detail: "Proof binding published; sub-2-second demo finality",
+      tone: "emerald",
+      delay: 300,
+      blockHere: false,
+    },
+  ];
+}
 
 export async function simulatePaymentBrowser(
   request: SimulatePaymentRequest,
   emit: Emit,
 ): Promise<string> {
+  const ctx = corridorContext(request.originCountryId, request.destinationCountryId);
+  if (!ctx) throw new Error("unknown country");
   const paymentId = request.paymentId ?? crypto.randomUUID();
-  const blocked = restricted(request.from) || restricted(request.to);
-  const pipeline = request.route === "LegacySwift" ? LEGACY : SOVEREIGN;
+  const pipeline =
+    request.route === "LegacySwift" ? legacySteps(ctx) : sovereignSteps(ctx);
   const started = performance.now();
   const stamp = () => new Date().toISOString();
 
@@ -67,7 +175,7 @@ export async function simulatePaymentBrowser(
       timestamp: stamp(),
     });
     await wait(def.delay);
-    if (blocked && def.block) {
+    if (def.blockHere) {
       emit({
         paymentId,
         route: request.route,
@@ -76,17 +184,20 @@ export async function simulatePaymentBrowser(
           index,
           total: pipeline.length,
           label: def.label,
-          detail: "Counterparty failed the sanctions screen. No proof is built.",
+          detail:
+            request.route === "SovereignRs"
+              ? "Sanctions list match — payment cannot be included in a block."
+              : "Corridor frozen by compliance — settlement not released.",
           tone: "rose",
           status: "blocked",
         },
         elapsedMs: Math.round(performance.now() - started),
-        feeUsd: request.route === "SovereignRs" ? 0 : 45,
+        feeUsd: request.route === "LegacySwift" ? legacyFee(ctx) : 0,
         txHash: null,
         totalElapsedMs: Math.round(performance.now() - started),
         timestamp: stamp(),
       });
-      throw new Error("counterparty failed the sanctions screen");
+      throw new Error("corridor blocked by compliance");
     }
     emit({
       paymentId,
@@ -107,8 +218,9 @@ export async function simulatePaymentBrowser(
       timestamp: stamp(),
     });
   }
-  const fee = request.route === "LegacySwift" ? 45 : 0.01;
-  const txHash = request.route === "SovereignRs" ? demoHash(paymentId) : null;
+  const fee = request.route === "LegacySwift" ? legacyFee(ctx) : 0.04;
+  const txHash =
+    request.route === "SovereignRs" ? demoHash(`${paymentId}:${ctx.origin.id}:${ctx.dest.id}`) : null;
   emit({
     paymentId,
     route: request.route,
@@ -123,14 +235,11 @@ export async function simulatePaymentBrowser(
   return paymentId;
 }
 
-export function emptyTrack(): import("./types").TrackSnapshot {
+export function emptyTrack(): TrackSnapshot {
   return { phase: "idle", steps: [], feeUsd: null, txHash: null, totalMs: null };
 }
 
-export function applyUpdate(
-  track: import("./types").TrackSnapshot,
-  update: TransactionUpdate,
-): import("./types").TrackSnapshot {
+export function applyUpdate(track: TrackSnapshot, update: TransactionUpdate): TrackSnapshot {
   if (update.kind === "step" && update.step) {
     const steps = [...track.steps];
     steps[update.step.index] = update.step;
@@ -162,4 +271,13 @@ export function applyUpdate(
     };
   }
   return track;
+}
+
+export function cbdcPair(originId: string, destId: string): { from: string; to: string } {
+  const origin = findCountry(originId);
+  const dest = findCountry(destId);
+  return {
+    from: origin?.cbdcName ?? "CBDC",
+    to: dest?.cbdcName ?? "CBDC",
+  };
 }

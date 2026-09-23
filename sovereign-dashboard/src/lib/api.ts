@@ -1,5 +1,8 @@
+import { COUNTRY_CATALOG, mockGlobalSnapshot } from "./countries";
 import type {
+  CountryNode,
   CurrencyBalance,
+  GlobalNetworkSnapshot,
   LedgerRow,
   LiveTransaction,
   NetworkStats,
@@ -10,20 +13,20 @@ import type {
   ValidatorNode,
 } from "./types";
 
-const VALIDATORS: ValidatorNode[] = [
-  { id: "br", name: "Banco Central do Brasil", city: "Brasília", x: 30, y: 68 },
-  { id: "cn", name: "PBOC", city: "Beijing", x: 78, y: 38 },
-  { id: "ae", name: "Central Bank of the UAE", city: "Abu Dhabi", x: 62, y: 48 },
-  { id: "in", name: "Reserve Bank of India", city: "Mumbai", x: 70, y: 54 },
-  { id: "eu", name: "ECB", city: "Frankfurt", x: 48, y: 36 },
-];
+const VALIDATORS: ValidatorNode[] = COUNTRY_CATALOG.map((node) => ({
+  id: node.id,
+  name: node.centralBank,
+  city: node.name,
+  x: node.mapX,
+  y: node.mapY,
+}));
 
 const PAIRS: Array<[string, string, string]> = [
-  ["Banco Central do Brasil", "PBOC", "BRL-CBDC"],
-  ["PBOC", "Central Bank of the UAE", "CNY-CBDC"],
-  ["Reserve Bank of India", "ECB", "INR-CBDC"],
-  ["ECB", "Banco Central do Brasil", "EUR-CBDC"],
-  ["Central Bank of the UAE", "Reserve Bank of India", "AED-CBDC"],
+  ["Banco Central do Brasil", "People's Bank of China", "BRL-CBDC"],
+  ["People's Bank of China", "Central Bank of the UAE", "CNY-CBDC"],
+  ["Reserve Bank of India", "Deutsche Bundesbank / ECB", "INR-CBDC"],
+  ["Federal Reserve", "Banco Central do Brasil", "USD-CBDC"],
+  ["Central Bank of the UAE", "South African Reserve Bank", "AED-CBDC"],
 ];
 
 let tick = 0;
@@ -151,6 +154,18 @@ export async function getTransactions(): Promise<LedgerRow[]> {
   if (!isTauri()) return mockActivity();
   const { invoke } = await import("@tauri-apps/api/core");
   return invoke<LedgerRow[]>("get_transactions");
+}
+
+export async function getAvailableCountries(): Promise<CountryNode[]> {
+  if (!isTauri()) return COUNTRY_CATALOG;
+  const { invoke } = await import("@tauri-apps/api/core");
+  return invoke<CountryNode[]>("get_available_countries");
+}
+
+export async function getGlobalNetworkSnapshot(): Promise<GlobalNetworkSnapshot> {
+  if (!isTauri()) return mockGlobalSnapshot();
+  const { invoke } = await import("@tauri-apps/api/core");
+  return invoke<GlobalNetworkSnapshot>("get_global_network_snapshot_cmd");
 }
 
 export async function runSimulatePayment(request: SimulatePaymentRequest): Promise<string> {

@@ -12,4 +12,4 @@ description = "Stake-weighted proposals, treasury multi-sig, and dispute stages"
 [dependencies]
 thiserror = { workspace = true }
 ed25519-dalek = { workspace = true }
-swift-rs-blockchain = { version = "0.1.0", path = "../swift-rs-blockchain" }
+swift-rs-blockchain = { workspace = true }

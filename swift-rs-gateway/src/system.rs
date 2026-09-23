@@ -82,6 +82,7 @@ pub struct ReserveView {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct ChainStatus {
+    pub system_version: &'static str,
     pub height: u64,
     pub base_fee: u128,
     pub finalized_transactions: usize,
@@ -409,6 +410,7 @@ impl PaymentSystem {
             })
             .collect::<Vec<_>>();
         ChainStatus {
+            system_version: env!("CARGO_PKG_VERSION"),
             height: self.node.height(),
             base_fee: self.node.base_fee,
             finalized_transactions: self.disclosures.len(),

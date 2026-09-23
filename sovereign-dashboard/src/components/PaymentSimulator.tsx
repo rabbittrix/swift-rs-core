@@ -1,32 +1,42 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Zap } from "lucide-react";
+import { CountrySelector } from "@/components/CountrySelector";
+import { GeopoliticalRiskBadge } from "@/components/GeopoliticalRiskBadge";
 import { Button } from "@/components/ui/button";
 import { SettlementPipeline } from "@/components/SettlementPipeline";
-import { isTauri, runSimulatePayment, subscribeTransactionUpdates } from "@/lib/api";
-import { applyUpdate, emptyTrack, simulatePaymentBrowser } from "@/lib/simulation";
-import type { SimulatePaymentRequest, TrackSnapshot, TransactionUpdate } from "@/lib/types";
+import {
+  getAvailableCountries,
+  isTauri,
+  runSimulatePayment,
+  subscribeTransactionUpdates,
+} from "@/lib/api";
+import { corridorContext, legacyFee } from "@/lib/countries";
+import { applyUpdate, cbdcPair, emptyTrack, simulatePaymentBrowser } from "@/lib/simulation";
+import type { CountryNode, TrackSnapshot, TransactionUpdate } from "@/lib/types";
 import { money } from "@/lib/utils";
 import { useDesk } from "@/store/useDesk";
 
-const INSTITUTIONS = [
-  "Banco do Brasil",
-  "Bank of China",
-  "First Abu Dhabi Bank",
-  "State Bank of India",
-  "Deutsche Bundesbank desk",
-  "Restricted Desk",
-];
-
 export function PaymentSimulator() {
   const remember = useDesk((state) => state.remember);
-  const [from, setFrom] = useState(INSTITUTIONS[0]);
-  const [to, setTo] = useState(INSTITUTIONS[1]);
+  const [countries, setCountries] = useState<CountryNode[]>([]);
+  const [origin, setOrigin] = useState<CountryNode | null>(null);
+  const [dest, setDest] = useState<CountryNode | null>(null);
   const [amount, setAmount] = useState(10_000_000);
   const [running, setRunning] = useState(false);
   const [legacy, setLegacy] = useState<TrackSnapshot>(emptyTrack());
   const [sovereign, setSovereign] = useState<TrackSnapshot>(emptyTrack());
   const activePayment = useRef<string | null>(null);
+
+  useEffect(() => {
+    void getAvailableCountries().then((list) => {
+      setCountries(list);
+      setOrigin(list.find((item) => item.id === "br") ?? list[0] ?? null);
+      setDest(list.find((item) => item.id === "cn") ?? list[1] ?? null);
+    });
+  }, []);
+
+  const ctx = origin && dest ? corridorContext(origin.id, dest.id) : null;
 
   const dispatch = useCallback((update: TransactionUpdate) => {
     if (activePayment.current && update.paymentId !== activePayment.current) return;
@@ -42,8 +52,14 @@ export function PaymentSimulator() {
     return () => stop();
   }, [dispatch]);
 
-  async function launch(id: string, body: Omit<SimulatePaymentRequest, "paymentId">, sink: (u: TransactionUpdate) => void) {
-    const request: SimulatePaymentRequest = { ...body, paymentId: id };
+  async function launch(
+    id: string,
+    originId: string,
+    destId: string,
+    route: "LegacySwift" | "SovereignRs",
+    sink: (u: TransactionUpdate) => void,
+  ) {
+    const request = { paymentId: id, originCountryId: originId, destinationCountryId: destId, amount, route };
     if (isTauri()) {
       await runSimulatePayment(request);
       return;
@@ -52,18 +68,12 @@ export function PaymentSimulator() {
   }
 
   async function send() {
+    if (!origin || !dest || origin.id === dest.id) return;
     setRunning(true);
     const id = crypto.randomUUID();
     activePayment.current = id;
     setLegacy({ ...emptyTrack(), phase: "running" });
     setSovereign({ ...emptyTrack(), phase: "running" });
-    const base = {
-      from,
-      to,
-      amount,
-      currencyFrom: "BRL-CBDC",
-      currencyTo: "CNY-CBDC",
-    };
     let sovereignHash: string | null = null;
     const sink = (update: TransactionUpdate) => {
       dispatch(update);
@@ -72,8 +82,8 @@ export function PaymentSimulator() {
       }
     };
     await Promise.allSettled([
-      launch(id, { ...base, route: "LegacySwift" }, sink),
-      launch(id, { ...base, route: "SovereignRs" }, sink),
+      launch(id, origin.id, dest.id, "LegacySwift", sink),
+      launch(id, origin.id, dest.id, "SovereignRs", sink),
     ]);
     if (sovereignHash) {
       remember({
@@ -81,7 +91,7 @@ export function PaymentSimulator() {
         date: new Date().toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }),
         type: "Swap",
         amount: money(amount),
-        currency: "BRL-CBDC",
+        currency: `${origin.fiatCurrency}-CBDC`,
         status: "Settled",
         tx_hash: sovereignHash,
         verified: true,
@@ -90,16 +100,19 @@ export function PaymentSimulator() {
     setRunning(false);
   }
 
-  const received = amount * 1.2;
-  const legacyDays = "~2–3 days";
-  const sovereignSeconds =
-    sovereign.totalMs != null ? `${(sovereign.totalMs / 1000).toFixed(1)}s` : "< 2s (demo)";
+  const pair = origin && dest ? cbdcPair(origin.id, dest.id) : { from: "—", to: "—" };
+  const oracleHint =
+    origin?.fiatCurrency === "BRL" && dest?.fiatCurrency === "CNY"
+      ? "1.20"
+      : origin?.fiatCurrency === "USD"
+        ? "FX desk"
+        : "oracle";
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="grid min-h-0 flex-1 grid-cols-[320px_1fr] gap-4">
+      <div className="grid min-h-0 flex-1 grid-cols-[340px_1fr] gap-4">
         <form
-          className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/80 p-4 shadow-xl shadow-black/20"
+          className="flex flex-col gap-3 overflow-auto rounded-xl border border-slate-800 bg-slate-950/80 p-4 shadow-xl shadow-black/20"
           onSubmit={(event) => {
             event.preventDefault();
             void send();
@@ -107,37 +120,27 @@ export function PaymentSimulator() {
         >
           <div className="flex items-center gap-2 text-emerald-400">
             <Zap className="h-4 w-4" />
-            <span className="text-sm font-semibold tracking-wide text-slate-100">Dual-track settlement</span>
+            <span className="text-sm font-semibold tracking-wide text-slate-100">Global corridor</span>
           </div>
-          <p className="text-[11px] leading-relaxed text-slate-400">
-            One instruction, two rails. Steps stream from the Rust backend over Tauri events. A restricted desk is refused before any CBDC moves.
-          </p>
+          {countries.length > 0 && origin && dest && (
+            <>
+              <CountrySelector
+                label="Origin country / central bank"
+                countries={countries}
+                valueId={origin.id}
+                onChange={setOrigin}
+              />
+              <CountrySelector
+                label="Destination country / central bank"
+                countries={countries}
+                valueId={dest.id}
+                onChange={setDest}
+              />
+            </>
+          )}
+          <GeopoliticalRiskBadge ctx={ctx} />
           <label className="text-[11px] text-slate-400">
-            From
-            <select
-              className="mt-1 w-full rounded-md border border-slate-800 bg-slate-950 px-2 py-2 text-sm text-slate-100"
-              value={from}
-              onChange={(event) => setFrom(event.target.value)}
-            >
-              {INSTITUTIONS.map((name) => (
-                <option key={name}>{name}</option>
-              ))}
-            </select>
-          </label>
-          <label className="text-[11px] text-slate-400">
-            To
-            <select
-              className="mt-1 w-full rounded-md border border-slate-800 bg-slate-950 px-2 py-2 text-sm text-slate-100"
-              value={to}
-              onChange={(event) => setTo(event.target.value)}
-            >
-              {INSTITUTIONS.map((name) => (
-                <option key={name}>{name}</option>
-              ))}
-            </select>
-          </label>
-          <label className="text-[11px] text-slate-400">
-            Amount (BRL-CBDC)
+            Amount ({origin?.fiatCurrency ?? "—"})
             <input
               className="mt-1 w-full rounded-md border border-slate-800 bg-slate-950 px-2 py-2 font-mono text-sm text-slate-100"
               type="number"
@@ -148,33 +151,33 @@ export function PaymentSimulator() {
           </label>
           <div className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs">
             <div className="flex items-center justify-between text-slate-300">
-              <span>BRL</span>
+              <span>{pair.from}</span>
               <motion.span layout className="font-mono text-blue-300">
                 {money(amount)}
               </motion.span>
             </div>
             <div className="my-1 flex items-center justify-center gap-1 text-[10px] uppercase tracking-widest text-slate-500">
-              <ArrowRight className="h-3 w-3" /> oracle 1.20
+              <ArrowRight className="h-3 w-3" /> {oracleHint}
             </div>
             <div className="flex items-center justify-between text-slate-300">
-              <span>CNY</span>
-              <span className="font-mono text-emerald-300">{money(received)}</span>
+              <span>{pair.to}</span>
+              <span className="font-mono text-emerald-300">{dest?.fiatCurrency ?? "—"} leg</span>
             </div>
           </div>
-          <Button type="submit" disabled={running || amount <= 0 || from === to} className="w-full">
-            {running ? "Processing…" : "Execute on both rails"}
+          <Button type="submit" disabled={running || amount <= 0 || !origin || !dest || origin.id === dest.id}>
+            {running ? "Processing…" : "Simulate both rails"}
           </Button>
         </form>
         <div className="grid min-h-0 grid-cols-2 gap-4">
           <SettlementPipeline
             title="Legacy · SWIFT"
-            subtitle="Correspondent friction & USD clearing"
+            subtitle={ctx?.highSwiftFriction ? "OFAC / USD friction" : "Correspondent chain"}
             route="LegacySwift"
             track={legacy}
           />
           <SettlementPipeline
             title="Sovereign · Swift-RS"
-            subtitle="BFT finality with ZK compliance"
+            subtitle={ctx?.sanctionedTouch ? "Fail-closed compliance" : "Direct CBDC corridor"}
             route="SovereignRs"
             track={sovereign}
           />
@@ -182,19 +185,21 @@ export function PaymentSimulator() {
       </div>
       <div className="grid grid-cols-3 gap-3 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-xs">
         <div>
-          <div className="text-slate-500">Legacy time</div>
+          <div className="text-slate-500">Legacy fee (est.)</div>
           <div className="font-mono text-lg text-amber-300">
-            {legacy.totalMs ? `${(legacy.totalMs / 1000).toFixed(1)}s demo` : legacyDays}
+            ${ctx ? legacyFee(ctx).toFixed(2) : "45–150"}
           </div>
         </div>
         <div>
           <div className="text-slate-500">Sovereign time</div>
-          <div className="font-mono text-lg text-emerald-300">{sovereignSeconds}</div>
+          <div className="font-mono text-lg text-emerald-300">
+            {sovereign.totalMs ? `${(sovereign.totalMs / 1000).toFixed(1)}s` : "< 2s demo"}
+          </div>
         </div>
         <div>
-          <div className="text-slate-500">Fee delta</div>
-          <div className="font-mono text-lg text-slate-100">
-            {(legacy.feeUsd ?? 45).toFixed(2)} → {(sovereign.feeUsd ?? 0.01).toFixed(2)} USD
+          <div className="text-slate-500">Corridor</div>
+          <div className="font-mono text-sm text-slate-100">
+            {origin?.flag} {origin?.fiatCurrency} → {dest?.flag} {dest?.fiatCurrency}
           </div>
         </div>
       </div>

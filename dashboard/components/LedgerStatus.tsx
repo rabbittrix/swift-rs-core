@@ -10,6 +10,7 @@ interface Reserve {
 }
 
 interface ChainStatus {
+  system_version: string;
   height: number;
   base_fee: number;
   finalized_transactions: number;
@@ -47,6 +48,10 @@ export default function LedgerStatus() {
       {error && <p className="text-amber-300 text-sm">{error}</p>}
       {status && (
         <div className="space-y-3 text-sm">
+          <div className="flex justify-between text-slate-300">
+            <span>System version</span>
+            <span className="text-emerald-300 font-mono">v{status.system_version}</span>
+          </div>
           <div className="flex justify-between text-slate-300">
             <span>Finalized height</span>
             <span className="text-white font-mono">{status.height}</span>
